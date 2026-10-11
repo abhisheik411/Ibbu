@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoolAuto – AC Car Mechanical Management</title>
+  <meta name="description" content="AC Car Mechanical shop management system for customer registration, parts inventory, and service tracking." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">❄️</div>
+      <div>
+        <div class="logo-title">CoolAuto</div>
+        <div class="logo-sub">AC Mechanical Management</div>
+      </div>
+    </div>
+    <button class="export-btn" id="exportExcelBtn" onclick="exportToExcel()">
+      <span>📊</span> Export Excel
+    </button>
+  </div>
+</header>
+
+<!-- ===== NAVIGATION TABS ===== -->
+<nav class="tab-nav" role="navigation">
+  <button class="tab-btn active" id="tab-register" onclick="switchTab('register')">
+    <span>🚗</span><span class="tab-label">Register</span>
+  </button>
+  <button class="tab-btn" id="tab-search" onclick="switchTab('search')">
+    <span>🔍</span><span class="tab-label">Search</span>
+  </button>
+  <button class="tab-btn" id="tab-parts" onclick="switchTab('parts')">
+    <span>🔧</span><span class="tab-label">Parts</span>
+  </button>
+  <button class="tab-btn" id="tab-service" onclick="switchTab('service')">
+    <span>⚙️</span><span class="tab-label">Service</span>
+  </button>
+  <button class="tab-btn" id="tab-records" onclick="switchTab('records')">
+    <span>📋</span><span class="tab-label">Records</span>
+  </button>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content">
+
+  <!-- =================== TAB 1: REGISTER =================== -->
+  <section class="tab-panel active" id="panel-register">
+    <div class="section-header">
+      <h1 class="section-title">Customer & Car Registration</h1>
+      <p class="section-sub">Register new customers and their vehicles</p>
+    </div>
+
+    <form class="card form-card" id="registerForm" onsubmit="submitRegistration(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="custName">👤 Customer Name *</label>
+          <input class="form-input" type="text" id="custName" placeholder="e.g. Rajesh Kumar" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="custPhone">📞 Phone Number *</label>
+          <input class="form-input" type="tel" id="custPhone" placeholder="e.g. 9876543210" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="carNumber">🔢 Car Number *</label>
+          <input class="form-input" type="text" id="carNumber" placeholder="e.g. GJ01AA1234" required style="text-transform:uppercase;" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="carModel">🚘 Car Model *</label>
+          <input class="form-input" type="text" id="carModel" placeholder="e.g. Maruti Swift" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="acType">❄️ AC Type</label>
+          <select class="form-input" id="acType">
+            <option value="">Select AC Type</option>
+            <option value="Window AC">Window AC</option>
+            <option value="Split AC">Split AC</option>
+            <option value="Car AC (R134a)">Car AC (R134a)</option>
+            <option value="Car AC (R1234yf)">Car AC (R1234yf)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regDate">📅 Date *</label>
+          <input class="form-input" type="date" id="regDate" required />
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label" for="problem">🛠️ Problem / Notes</label>
+          <textarea class="form-input" id="problem" placeholder="Describe the AC problem or service required..." rows="3"></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label class="form-label" for="address">🏠 Address</label>
+          <input class="form-input" type="text" id="address" placeholder="Customer address (optional)" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="reset" class="btn btn-outline" onclick="resetRegForm()">Clear</button>
+        <button type="submit" class="btn btn-primary">Register Customer</button>
+      </div>
+    </form>
+
+    <!-- Recent Registrations -->
+    <div class="section-mini-header">
+      <h2 class="mini-title">Recent Registrations</h2>
+      <span class="badge" id="custCountBadge">0 customers</span>
+    </div>
+    <div id="recentRegistrations" class="card-list"></div>
+  </section>
+
+  <!-- =================== TAB 2: SEARCH =================== -->
+  <section class="tab-panel" id="panel-search">
+    <div class="section-header">
+      <h1 class="section-title">Search Customers</h1>
+      <p class="section-sub">Find customers by name or car number</p>
+    </div>
+
+    <div class="card search-card">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="searchInput" placeholder="Search by name or car number..." oninput="performSearch()" />
+        <button class="search-clear" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="search-filters">
+        <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" id="filter-name" onclick="setFilter('name')">By Name</button>
+        <button class="filter-btn" id="filter-car" onclick="setFilter('car')">By Car No.</button>
+      </div>
+    </div>
+
+    <div id="searchResults" class="card-list">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p>Start typing to search customers...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== TAB 3: PARTS =================== -->
+  <section class="tab-panel" id="panel-parts">
+    <div class="section-header">
+      <h1 class="section-title">Parts Inventory</h1>
+      <p class="section-sub">Manage your AC spare parts stock</p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-val" id="totalPartsCount">0</div>
+        <div class="stat-lbl">Total Parts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-val" id="inStockCount">0</div>
+        <div class="stat-lbl">In Stock</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-val" id="lowStockCount">0</div>
+        <div class="stat-lbl">Low Stock</div>
+      </div>
+    </div>
+
+    <!-- Add Part Form -->
+    <div class="card form-card">
+      <h2 class="card-title">➕ Add New Part</h2>
+      <form id="addPartForm" onsubmit="submitPart(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="partName">Part Name *</label>
+            <input class="form-input" type="text" id="partName" placeholder="e.g. AC Compressor" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="partNumber">Part Number *</label>
+            <input class="form-input" type="text" id="partNumber" placeholder="e.g. ACP-2024" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="partCount">Initial Stock *</label>
+            <input class="form-input" type="number" id="partCount" placeholder="e.g. 10" min="1" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="partPrice">Unit Price (₹)</label>
+            <input class="form-input" type="number" id="partPrice" placeholder="e.g. 1500" min="0" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Add Part</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Parts List -->
+    <div class="section-mini-header">
+      <h2 class="mini-title">Inventory List</h2>
+      <input class="mini-search" type="text" id="partsSearch" placeholder="Search parts..." oninput="renderPartsList()" />
+    </div>
+    <div id="partsList" class="parts-grid"></div>
+  </section>
+
+  <!-- =================== TAB 4: SERVICE =================== -->
+  <section class="tab-panel" id="panel-service">
+    <div class="section-header">
+      <h1 class="section-title">Service Entry</h1>
+      <p class="section-sub">Record service and deduct parts from inventory</p>
+    </div>
+
+    <div class="card form-card">
+      <h2 class="card-title">🔧 New Service Record</h2>
+      <form id="serviceForm" onsubmit="submitService(event)">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label" for="serviceCarSearch">🔢 Search Car Number / Customer Name *</label>
+            <input class="form-input" type="text" id="serviceCarSearch" placeholder="Type car number or customer name..." oninput="searchServiceCustomer()" required />
+            <div id="serviceCustomerDropdown" class="dropdown-list" style="display:none;"></div>
+            <input type="hidden" id="selectedCustomerId" />
+            <div id="selectedCustomerCard" class="selected-customer-card" style="display:none;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="serviceDate">📅 Service Date *</label>
+            <input class="form-input" type="date" id="serviceDate" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="serviceType">⚙️ Service Type</label>
+            <select class="form-input" id="serviceType">
+              <option value="Gas Refill">Gas Refill</option>
+              <option value="Compressor Repair">Compressor Repair</option>
+              <option value="Filter Change">Filter Change</option>
+              <option value="Full Service">Full Service</option>
+              <option value="Leak Detection">Leak Detection</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Parts Used Section -->
+        <div class="parts-used-section">
+          <div class="parts-used-header">
+            <h3 class="parts-used-title">🔩 Parts Used</h3>
+            <button type="button" class="btn btn-sm btn-outline" onclick="addPartRow()">+ Add Part</button>
+          </div>
+          <div id="partsUsedContainer">
+            <!-- Part rows added dynamically -->
+          </div>
+        </div>
+
+        <div class="form-group full-width" style="margin-top:1rem;">
+          <label class="form-label" for="serviceNotes">📝 Service Notes</label>
+          <textarea class="form-input" id="serviceNotes" placeholder="Additional notes about the service..." rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="laborCost">💰 Labour Cost (₹)</label>
+          <input class="form-input" type="number" id="laborCost" placeholder="e.g. 500" min="0" />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save Service Record</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- =================== TAB 5: RECORDS =================== -->
+  <section class="tab-panel" id="panel-records">
+    <div class="section-header">
+      <h1 class="section-title">All Records</h1>
+      <p class="section-sub">Complete history of customers and services</p>
+    </div>
+
+    <div class="records-tabs">
+      <button class="rec-tab active" id="rectab-customers" onclick="switchRecordsTab('customers')">👥 Customers</button>
+      <button class="rec-tab" id="rectab-services" onclick="switchRecordsTab('services')">⚙️ Services</button>
+    </div>
+
+    <div id="records-customers-panel">
+      <div id="allCustomersList" class="card-list"></div>
+    </div>
+    <div id="records-services-panel" style="display:none;">
+      <div id="allServicesList" class="card-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== TOAST NOTIFICATION ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <div id="modalContent"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
